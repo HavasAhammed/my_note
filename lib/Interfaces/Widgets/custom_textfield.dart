@@ -20,8 +20,7 @@ class CustomTextField extends StatelessWidget {
       height: 60,
       width: MediaQuery.of(context).size.width,
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
-          color: Colors.grey[600]),
+          borderRadius: BorderRadius.circular(15), color: Colors.grey[600]),
       child: Container(
         padding: const EdgeInsets.only(left: 5, top: 5),
         child: TextFormField(
