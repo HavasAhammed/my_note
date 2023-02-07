@@ -107,7 +107,6 @@ class _NoteListScreenState extends State<NoteListScreen> {
                     }
                     return result;
                   },
-                  crossAxisEndOffset: 100,
                   background: Container(
                     color: Colors.red,
                     child: const Align(

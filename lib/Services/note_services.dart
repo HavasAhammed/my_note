@@ -4,7 +4,7 @@ import 'package:my_notes/Models/api_response.dart';
 import 'package:my_notes/Models/note.dart';
 import 'package:my_notes/Models/note_for_listing.dart';
 import 'package:http/http.dart' as http;
-import 'package:my_notes/Models/note_insert.dart';
+import 'package:my_notes/Models/note_manipulation.dart';
 import 'package:my_notes/Utils/api_const.dart';
 
 class NoteService {

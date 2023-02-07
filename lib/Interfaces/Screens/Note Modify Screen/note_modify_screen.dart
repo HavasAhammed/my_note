@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:my_notes/Interfaces/Widgets/custom_textfield.dart';
 import 'package:my_notes/Models/note.dart';
-import 'package:my_notes/Models/note_insert.dart';
+import 'package:my_notes/Models/note_manipulation.dart';
 import 'package:my_notes/Services/note_services.dart';
 
 class NoteModifyScreen extends StatefulWidget {
@@ -83,17 +83,17 @@ class _NoteModifyScreenState extends State<NoteModifyScreen> {
                         onPressed: () async {
                           if (isEditing) {
                             // update note in api
-                            setState(() {
-                              isLoading = true;
-                            });
+                            // setState(() {
+                            //   isLoading = true;
+                            // });
                             final note = NoteManipulation(
                                 noteTitle: titleController.text,
                                 noteContent: contentController.text);
                             final result = await noteService.updateNote(
                                 widget.noteID!, note);
-                            setState(() {
-                              isLoading = false;
-                            });
+                            // setState(() {
+                            //   isLoading = false;
+                            // });
                             const title = 'Done';
                             final text = result.error
                                 ? (result.errorMessage ?? 'An error occured')
@@ -117,16 +117,16 @@ class _NoteModifyScreenState extends State<NoteModifyScreen> {
                             });
                           } else {
                             // create note in api
-                            setState(() {
-                              isLoading = true;
-                            });
+                            // setState(() {
+                            //   isLoading = true;
+                            // });
                             final note = NoteManipulation(
                                 noteTitle: titleController.text,
                                 noteContent: contentController.text);
                             final result = await noteService.createNote(note);
-                            setState(() {
-                              isLoading = false;
-                            });
+                            // setState(() {
+                            //   isLoading = false;
+                            // });
                             const title = 'Done';
                             final text = result.error
                                 ? (result.errorMessage ?? 'An error occured')
