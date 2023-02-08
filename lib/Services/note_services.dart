@@ -1,99 +1,42 @@
-import 'dart:convert';
-
-import 'package:my_notes/Models/api_response.dart';
+import 'package:chopper/chopper.dart';
+import 'package:my_notes/Interceptors/header_interceptors.dart';
 import 'package:my_notes/Models/note.dart';
 import 'package:my_notes/Models/note_for_listing.dart';
-import 'package:http/http.dart' as http;
 import 'package:my_notes/Models/note_manipulation.dart';
 import 'package:my_notes/Utils/api_const.dart';
 
-class NoteService {
+part 'note_services.chopper.dart';
+
+@ChopperApi()
+abstract class NoteService extends ChopperService {
   static const headers = {
     'apiKey': '8ebfd7ef-6590-4ad3-bced-9eea05cae7f7',
     'Content-Type': 'application/json'
   };
-  Future<APIResponse<List<NoteForListing>>> getNotesList() {
-    return http
-        .get(Uri.parse(ApiConstants.notes), headers: headers)
-        .then((data) {
-      if (data.statusCode == 200) {
-        final jsonDate = json.decode(data.body);
-        final notes = <NoteForListing>[];
-        for (var item in jsonDate) {
-          notes.add(NoteForListing.fromJson(item));
-        }
-        return APIResponse<List<NoteForListing>>(
-          data: notes,
-        );
-      }
-      return APIResponse<List<NoteForListing>>(
-          error: true, errorMessage: 'An error occured');
-    }).catchError((_) => APIResponse<List<NoteForListing>>(
-            error: true, errorMessage: 'An error occured'));
-  }
 
-  Future<APIResponse<Note>> getNote(String noteID) {
-    return http
-        .get(Uri.parse('${ApiConstants.notes}/$noteID'), headers: headers)
-        .then((data) {
-      if (data.statusCode == 200) {
-        final jsonDate = json.decode(data.body);
+  // static NoteService create([ChopperClient? client]) => _$NoteService(client);
 
-        return APIResponse<Note>(
-          data: Note.fromJson(jsonDate),
-        );
-      }
-      return APIResponse<Note>(error: true, errorMessage: 'An error occured');
-    }).catchError((_) =>
-            APIResponse<Note>(error: true, errorMessage: 'An error occured'));
-  }
+  @Get()
+  Future<Response<List<NoteForListing>>> getNotesList();
 
-  Future<APIResponse<bool>> createNote(NoteManipulation item) {
-    return http
-        .post(Uri.parse(ApiConstants.notes),
-            headers: headers, body: json.encode(item.toJson()))
-        .then((data) {
-      if (data.statusCode == 201) {
-        return APIResponse<bool>(
-          data: true,
-        );
-      }
-      return APIResponse<bool>(error: true, errorMessage: 'An error occured');
-    }).catchError((_) =>
-            APIResponse<bool>(error: true, errorMessage: 'An error occured'));
-  }
+  @Get(path: '{noteID}')
+  Future<Response<Note>> getNote(String noteID);
 
-  Future<APIResponse<bool>> updateNote(String noteID, NoteManipulation item) {
-    return http
-        .put(Uri.parse('${ApiConstants.notes}/$noteID'),
-            headers: headers, body: json.encode(item.toJson()))
-        .then((data) {
-      if (data.statusCode == 204) {
-        return APIResponse<bool>(
-          data: true,
-        );
-      }
-      return APIResponse<bool>(error: true, errorMessage: 'An error occured');
-    }).catchError((_) =>
-            APIResponse<bool>(error: true, errorMessage: 'An error occured'));
-  }
+  @Post()
+  Future<Response<bool>> createNote(NoteManipulation item);
 
-  Future<APIResponse<bool>> deleteNote(
-    String noteID,
-  ) {
-    return http
-        .delete(
-      Uri.parse('${ApiConstants.notes}/$noteID'),
-      headers: headers,
-    )
-        .then((data) {
-      if (data.statusCode == 204) {
-        return APIResponse<bool>(
-          data: true,
-        );
-      }
-      return APIResponse<bool>(error: true, errorMessage: 'An error occured');
-    }).catchError((_) =>
-            APIResponse<bool>(error: true, errorMessage: 'An error occured'));
+  @Put(path: '{noteID}')
+  Future<Response<bool>> updateNote(String noteID, NoteManipulation item);
+
+  @Delete(path: '{noteID}')
+  Future<Response<bool>> deleteNote(String noteID);
+
+  static NoteService create() {
+    final client = ChopperClient(
+        interceptors: [HeaderInterceptors()],
+        baseUrl: Uri.parse(ApiConstants.notes),
+        services: [_$NoteService()],
+        converter: const JsonConverter());
+    return _$NoteService(client);
   }
 }

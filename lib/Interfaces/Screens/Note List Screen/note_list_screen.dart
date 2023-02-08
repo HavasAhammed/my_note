@@ -1,11 +1,11 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:chopper/chopper.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:my_notes/Interfaces/Screens/Note%20Modify%20Screen/note_modify_screen.dart';
 import 'package:my_notes/Interfaces/Widgets/note_delete.dart';
-import 'package:my_notes/Models/api_response.dart';
 import 'package:my_notes/Models/note_for_listing.dart';
 import 'package:my_notes/Services/note_services.dart';
 
@@ -19,7 +19,7 @@ class NoteListScreen extends StatefulWidget {
 class _NoteListScreenState extends State<NoteListScreen> {
   NoteService get service => GetIt.I<NoteService>();
 
-  late APIResponse<List<NoteForListing>> _apiResponse;
+  late Response<List<NoteForListing>> _apiResponse;
   bool _isLoading = false;
 
   String formatDateTime(DateTime dateTime) {
@@ -68,9 +68,9 @@ class _NoteListScreenState extends State<NoteListScreen> {
                 child: CircularProgressIndicator(),
               );
             }
-            if (_apiResponse.error) {
-              return Center(
-                child: Text(_apiResponse.errorMessage!),
+            if (!_apiResponse.isSuccessful) {
+              return const Center(
+                child: Text('An error occured'),
               );
             }
             return ListView.separated(
@@ -80,7 +80,7 @@ class _NoteListScreenState extends State<NoteListScreen> {
               ),
               itemBuilder: (_, index) {
                 return Dismissible(
-                  key: ValueKey(_apiResponse.data![index].noteID),
+                  key: ValueKey(_apiResponse.body![index].noteID),
                   direction: DismissDirection.endToStart,
                   onDismissed: (direction) {},
                   confirmDismiss: (direction) async {
@@ -91,19 +91,18 @@ class _NoteListScreenState extends State<NoteListScreen> {
 
                     if (result) {
                       final deleteResult = await service
-                          .deleteNote(_apiResponse.data![index].noteID!);
+                          .deleteNote(_apiResponse.body![index].noteID!);
                       String message;
-                      if (deleteResult.data == true) {
+                      if (deleteResult.body == true) {
                         message = 'The note was deleted';
                       } else {
-                        message =
-                            deleteResult.errorMessage ?? 'An error occured';
+                        message = 'An error occured';
                       }
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text(message),
                         duration: const Duration(milliseconds: 1000),
                       ));
-                      return deleteResult.data ?? false;
+                      return deleteResult.body ?? false;
                     }
                     return result;
                   },
@@ -116,25 +115,25 @@ class _NoteListScreenState extends State<NoteListScreen> {
                   ),
                   child: ListTile(
                     title: Text(
-                      _apiResponse.data![index].noteTitle ?? 'No title',
+                      _apiResponse.body![index].noteTitle ?? 'No title',
                       style: TextStyle(color: Theme.of(context).primaryColor),
                     ),
                     subtitle: Text(
-                        'Last edited on ${formatDateTime(_apiResponse.data![index].latestEditDateTime ?? _apiResponse.data![index].createDateTime!)}'),
+                        'Last edited on ${formatDateTime(_apiResponse.body![index].latestEditDateTime ?? _apiResponse.body![index].createDateTime!)}'),
                     onTap: () {
                       Navigator.of(context)
                           .push(MaterialPageRoute(
                               builder: (context) => NoteModifyScreen(
-                                    noteID: _apiResponse.data![index].noteID,
+                                    noteID: _apiResponse.body![index].noteID,
                                   )))
-                          .then((data) {
+                          .then((body) {
                         _fetchNotes();
                       });
                     },
                   ),
                 );
               },
-              itemCount: _apiResponse.data!.length,
+              itemCount: _apiResponse.body!.length,
             );
           },
         ));

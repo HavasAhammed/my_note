@@ -41,10 +41,10 @@ class _NoteModifyScreenState extends State<NoteModifyScreen> {
         setState(() {
           isLoading = false;
         });
-        if (response.error) {
-          errorMessage = response.errorMessage ?? 'An error occured';
+        if (!response.isSuccessful) {
+          errorMessage = 'An error occured';
         }
-        note = response.data;
+        note = response.body;
         titleController.text = note!.noteTitle ?? 'No title';
         contentController.text = note!.noteContent ?? 'No content';
       });
@@ -95,8 +95,8 @@ class _NoteModifyScreenState extends State<NoteModifyScreen> {
                             //   isLoading = false;
                             // });
                             const title = 'Done';
-                            final text = result.error
-                                ? (result.errorMessage ?? 'An error occured')
+                            final text = !result.isSuccessful
+                                ? 'An error occured'
                                 : 'Your note was updated';
 
                             await showDialog(
@@ -128,8 +128,8 @@ class _NoteModifyScreenState extends State<NoteModifyScreen> {
                             //   isLoading = false;
                             // });
                             const title = 'Done';
-                            final text = result.error
-                                ? (result.errorMessage ?? 'An error occured')
+                            final text = !result.isSuccessful
+                                ? 'An error occured'
                                 : 'Your note was created';
 
                             await showDialog(
