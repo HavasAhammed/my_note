@@ -1,14 +1,17 @@
-import 'package:chopper/chopper.dart';
-import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
-import 'package:my_notes/Services/note_services.dart';
-import 'package:my_notes/app.dart';
+import 'dart:developer';
 
-void setupLocator() {
-  GetIt.I.registerLazySingleton(() => NoteService.create());
-}
+import 'package:flutter/material.dart';
+import 'package:my_notes/app.dart';
+import 'package:logging/logging.dart';
 
 void main() {
-  setupLocator();
+  _setupLogging();
   runApp(const MyApp());
+}
+
+void _setupLogging() {
+  Logger.root.level = Level.ALL;
+  Logger.root.onRecord.listen((rec) {
+    log('${rec.level.name} : ${rec.time} : ${rec.message}');
+  });
 }

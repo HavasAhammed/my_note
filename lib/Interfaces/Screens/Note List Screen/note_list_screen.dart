@@ -1,13 +1,12 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:chopper/chopper.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 import 'package:my_notes/Interfaces/Screens/Note%20Modify%20Screen/note_modify_screen.dart';
 import 'package:my_notes/Interfaces/Widgets/note_delete.dart';
-import 'package:my_notes/Models/note_for_listing.dart';
-import 'package:my_notes/Services/note_services.dart';
+import 'package:my_notes/Models/note.dart';
+import 'package:my_notes/Providers/note_provider.dart';
+import 'package:provider/provider.dart';
 
 class NoteListScreen extends StatefulWidget {
   const NoteListScreen({super.key});
@@ -17,10 +16,12 @@ class NoteListScreen extends StatefulWidget {
 }
 
 class _NoteListScreenState extends State<NoteListScreen> {
-  NoteService get service => GetIt.I<NoteService>();
+  // NoteService get service => GetIt.I<NoteService>();
 
-  late Response<List<NoteForListing>> _apiResponse;
-  bool _isLoading = false;
+  // late Response<List<Note>> _apiResponse;
+  // bool _isLoading = false;
+
+  Note? note;
 
   String formatDateTime(DateTime dateTime) {
     return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
@@ -28,114 +29,119 @@ class _NoteListScreenState extends State<NoteListScreen> {
 
   @override
   void initState() {
-    _fetchNotes();
     super.initState();
-  }
-
-  _fetchNotes() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    _apiResponse = await service.getNotesList();
-
-    setState(() {
-      _isLoading = false;
+    Future.delayed(Duration.zero, () async {
+      await Provider.of<NoteProvider>(context, listen: false)
+          .getAllNotes(context);
     });
   }
+
+  // _fetchNotes() async {
+  //   setState(() {
+  //     _isLoading = true;
+  //   });
+
+  //   _apiResponse = await service.getNotesList();
+
+  //   setState(() {
+  //     _isLoading = false;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: const Text('List of Notes'),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            Navigator.of(context)
-                .push(MaterialPageRoute(
-                    builder: (context) => const NoteModifyScreen()))
-                .then((_) {
-              _fetchNotes();
-            });
-          },
-          child: const Icon(Icons.add),
-        ),
-        body: Builder(
-          builder: (_) {
-            if (_isLoading) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-            if (!_apiResponse.isSuccessful) {
-              return const Center(
-                child: Text('An error occured'),
-              );
-            }
-            return ListView.separated(
-              separatorBuilder: (_, __) => const Divider(
-                height: 1,
-                color: Colors.green,
-              ),
-              itemBuilder: (_, index) {
-                return Dismissible(
-                  key: ValueKey(_apiResponse.body![index].noteID),
-                  direction: DismissDirection.endToStart,
-                  onDismissed: (direction) {},
-                  confirmDismiss: (direction) async {
-                    final result = await showDialog(
-                      context: context,
-                      builder: (_) => const NoteDelete(),
-                    );
-
-                    if (result) {
-                      final deleteResult = await service
-                          .deleteNote(_apiResponse.body![index].noteID!);
-                      String message;
-                      if (deleteResult.body == true) {
-                        message = 'The note was deleted';
-                      } else {
-                        message = 'An error occured';
-                      }
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(message),
-                        duration: const Duration(milliseconds: 1000),
-                      ));
-                      return deleteResult.body ?? false;
-                    }
-                    return result;
-                  },
-                  background: Container(
-                    color: Colors.red,
-                    child: const Align(
-                      alignment: Alignment.center,
-                      child: Icon(CupertinoIcons.delete),
-                    ),
-                  ),
-                  child: ListTile(
-                    title: Text(
-                      _apiResponse.body![index].noteTitle ?? 'No title',
-                      style: TextStyle(color: Theme.of(context).primaryColor),
-                    ),
-                    subtitle: Text(
-                        'Last edited on ${formatDateTime(_apiResponse.body![index].latestEditDateTime ?? _apiResponse.body![index].createDateTime!)}'),
-                    onTap: () {
-                      Navigator.of(context)
-                          .push(MaterialPageRoute(
-                              builder: (context) => NoteModifyScreen(
-                                    noteID: _apiResponse.body![index].noteID,
-                                  )))
-                          .then((body) {
-                        _fetchNotes();
-                      });
-                    },
-                  ),
-                );
+    return Consumer<NoteProvider>(
+      builder: (context, noteProvider, _) {
+        return Scaffold(
+            appBar: AppBar(
+              centerTitle: true,
+              title: const Text('List of Notes'),
+            ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => NoteModifyScreen(
+                          note: note,
+                          noteID: null,
+                        )));
               },
-              itemCount: _apiResponse.body!.length,
-            );
-          },
-        ));
+              child: const Icon(Icons.add),
+            ),
+            body: noteProvider.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : noteProvider.notes.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'No Notes',
+                          style: TextStyle(color: Colors.black, fontSize: 20),
+                        ),
+                      )
+                    : ListView.separated(
+                        separatorBuilder: (_, __) => const Divider(
+                          height: 1,
+                          color: Colors.green,
+                        ),
+                        itemBuilder: (_, index) {
+                          return Dismissible(
+                            key: ValueKey(noteProvider.notes[index].noteID),
+                            direction: DismissDirection.endToStart,
+                            onDismissed: (direction) {},
+                            confirmDismiss: (direction) async {
+                              final result = await showDialog(
+                                context: context,
+                                builder: (_) => const NoteDelete(),
+                              );
+
+                              if (result) {
+                                final deleteResult =
+                                    await Provider.of<NoteProvider>(context,
+                                            listen: false)
+                                        .deleteNote(context, note!);
+                                String message;
+                                if (deleteResult.body == true) {
+                                  message = 'The note was deleted';
+                                } else {
+                                  message = 'An error occured';
+                                }
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(SnackBar(
+                                  content: Text(message),
+                                  duration: const Duration(milliseconds: 1000),
+                                ));
+                                return deleteResult.body ?? false;
+                              }
+                              return result;
+                            },
+                            background: Container(
+                              color: Colors.red,
+                              child: const Align(
+                                alignment: Alignment.center,
+                                child: Icon(CupertinoIcons.delete),
+                              ),
+                            ),
+                            child: ListTile(
+                              title: Text(
+                                noteProvider.notes[index].noteTitle ??
+                                    'No title',
+                                style: TextStyle(
+                                    color: Theme.of(context).primaryColor),
+                              ),
+                              subtitle: Text(
+                                  'Last edited on ${formatDateTime((noteProvider.notes[index].latestEditDateTime ?? noteProvider.notes[index].createDateTime!))}'),
+                              onTap: () {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (context) => NoteModifyScreen(
+                                          note: noteProvider.notes[index],
+                                          noteID:
+                                              noteProvider.notes[index].noteID,
+                                        )));
+                              },
+                            ),
+                          );
+                        },
+                        itemCount: noteProvider.notes.length,
+                      ));
+      },
+    );
   }
 }

@@ -1,53 +1,39 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 import 'package:my_notes/Interfaces/Widgets/custom_textfield.dart';
 import 'package:my_notes/Models/note.dart';
-import 'package:my_notes/Models/note_manipulation.dart';
-import 'package:my_notes/Services/note_services.dart';
+import 'package:my_notes/Providers/note_provider.dart';
+import 'package:provider/provider.dart';
 
 class NoteModifyScreen extends StatefulWidget {
-  const NoteModifyScreen({super.key, this.noteID});
+  const NoteModifyScreen({super.key, this.noteID, this.note});
 
   final String? noteID;
+  final Note? note;
 
   @override
   State<NoteModifyScreen> createState() => _NoteModifyScreenState();
 }
 
 class _NoteModifyScreenState extends State<NoteModifyScreen> {
-  bool get isEditing => widget.noteID != null;
-
-  NoteService get noteService => GetIt.I<NoteService>();
+  bool get isEditing => !(widget.noteID == null);
 
   TextEditingController titleController = TextEditingController();
 
   TextEditingController contentController = TextEditingController();
 
-  bool isLoading = false;
-
   String? errorMessage;
-
-  Note? note;
 
   @override
   void initState() {
+    Future.delayed(Duration.zero, () async {
+      await Provider.of<NoteProvider>(context, listen: false)
+          .getSingleNote(context,widget.note!);
+    });
     if (isEditing) {
-      setState(() {
-        isLoading = true;
-      });
-      noteService.getNote(widget.noteID!).then((response) {
-        setState(() {
-          isLoading = false;
-        });
-        if (!response.isSuccessful) {
-          errorMessage = 'An error occured';
-        }
-        note = response.body;
-        titleController.text = note!.noteTitle ?? 'No title';
-        contentController.text = note!.noteContent ?? 'No content';
-      });
+      titleController.text = widget.note!.noteTitle ?? '';
+      contentController.text = widget.note!.noteContent ?? 'hi';
     }
 
     super.initState();
@@ -55,106 +41,103 @@ class _NoteModifyScreenState extends State<NoteModifyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(isEditing ? 'Edit Note' : 'Create Note')),
-      body: Padding(
-        padding: const EdgeInsets.all(18),
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                children: [
-                  CustomTextField(
-                      hintText: 'Note Title',
-                      icon: Icons.title,
-                      controller: titleController),
-                  const SizedBox(
-                    height: 24,
-                  ),
-                  CustomTextField(
-                      hintText: 'Note Content',
-                      icon: Icons.content_paste,
-                      controller: contentController),
-                  const SizedBox(
-                    height: 24,
-                  ),
-                  SizedBox(
-                    height: 36,
-                    child: ElevatedButton(
-                        onPressed: () async {
-                          if (isEditing) {
-                            // update note in api
-                            // setState(() {
-                            //   isLoading = true;
-                            // });
-                            final note = NoteManipulation(
-                                noteTitle: titleController.text,
-                                noteContent: contentController.text);
-                            final result = await noteService.updateNote(
-                                widget.noteID!, note);
-                            // setState(() {
-                            //   isLoading = false;
-                            // });
-                            const title = 'Done';
-                            final text = !result.isSuccessful
-                                ? 'An error occured'
-                                : 'Your note was updated';
+    return Consumer<NoteProvider>(builder: (context, noteProvider, _) {
+      return Scaffold(
+        appBar: AppBar(title: Text(isEditing ? 'Edit Note' : 'Create Note')),
+        body: noteProvider.isLoading
+            ? const Center(
+                child: CircularProgressIndicator(),
+              )
+            : Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  children: [
+                    CustomTextField(
+                        hintText: 'Note Title',
+                        icon: Icons.title,
+                        controller: titleController),
+                    const SizedBox(
+                      height: 24,
+                    ),
+                    CustomTextField(
+                        hintText: 'Note Content',
+                        icon: Icons.content_paste,
+                        controller: contentController),
+                    const SizedBox(
+                      height: 24,
+                    ),
+                    SizedBox(
+                      height: 36,
+                      child: ElevatedButton(
+                          onPressed: () async {
+                            if (isEditing) {
+                              // update note in api
 
-                            await showDialog(
-                              context: context,
-                              builder: (_) => AlertDialog(
-                                title: const Text(title),
-                                content: Text(text),
-                                actions: [
-                                  TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: const Text('Ok'))
-                                ],
-                              ),
-                            ).then((data) {
-                              Navigator.of(context).pop();
-                            });
-                          } else {
-                            // create note in api
-                            // setState(() {
-                            //   isLoading = true;
-                            // });
-                            final note = NoteManipulation(
-                                noteTitle: titleController.text,
-                                noteContent: contentController.text);
-                            final result = await noteService.createNote(note);
-                            // setState(() {
-                            //   isLoading = false;
-                            // });
-                            const title = 'Done';
-                            final text = !result.isSuccessful
-                                ? 'An error occured'
-                                : 'Your note was created';
+                              final note = Note(
+                                  noteTitle: titleController.text,
+                                  noteContent: contentController.text);
+                              final result = await noteProvider.updateNote(
+                                  context: context, note: note);
 
-                            await showDialog(
-                              context: context,
-                              builder: (_) => AlertDialog(
-                                title: const Text(title),
-                                content: Text(text),
-                                actions: [
-                                  TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: const Text('Ok'))
-                                ],
-                              ),
-                            ).then((data) {
-                              Navigator.of(context).pop();
-                            });
-                          }
-                        },
-                        child: const Text('Submit')),
-                  )
-                ],
+                              const title = 'Done';
+                              final text = !result.isSuccessful
+                                  ? 'An error occured'
+                                  : 'Your note was updated';
+
+                              await showDialog(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                  title: const Text(title),
+                                  content: Text(text),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: const Text('Ok'))
+                                  ],
+                                ),
+                              ).then((data) {
+                                Navigator.of(context).pop();
+                              });
+                            } else {
+                              // create note in api
+
+                              final note = Note(
+                                  noteTitle: titleController.text,
+                                  noteContent: contentController.text);
+                              final result = await noteProvider.createNote(
+                                  context: context, note: note);
+
+                              const title = 'Done';
+                              final text = !result.isSuccessful
+                                  ? 'An error occured'
+                                  : 'Your note was created';
+
+                              await showDialog(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                  title: const Text(title),
+                                  content: Text(text),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: const Text('Ok'))
+                                  ],
+                                ),
+                              ).then((data) {
+                                Navigator.of(context).pop();
+                              });
+                            }
+                          },
+                          child: const Text('Submit')),
+                    )
+                  ],
+                ),
               ),
-      ),
-    );
+      );
+    });
   }
 }

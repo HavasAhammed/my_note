@@ -17,60 +17,64 @@ class _$NoteService extends NoteService {
   final definitionType = NoteService;
 
   @override
-  Future<Response<List<NoteForListing>>> getNotesList() {
+  Future<Response<dynamic>> getNotesList() {
     final Uri $url = Uri.parse('');
     final Request $request = Request(
       'GET',
       $url,
       client.baseUrl,
     );
-    return client.send<List<NoteForListing>, NoteForListing>($request);
+    return client.send<dynamic, dynamic>($request);
   }
 
   @override
-  Future<Response<Note>> getNote(String noteID) {
-    final Uri $url = Uri.parse('{noteID}');
+  Future<Response<dynamic>> getNote({required String noteID}) {
+    final Uri $url = Uri.parse('${noteID}');
     final Request $request = Request(
       'GET',
       $url,
       client.baseUrl,
     );
-    return client.send<Note, Note>($request);
+    return client.send<dynamic, dynamic>($request);
   }
 
   @override
-  Future<Response<bool>> createNote(NoteManipulation item) {
+  Future<Response<dynamic>> createNote({required Map<String, dynamic> body}) {
     final Uri $url = Uri.parse('');
+    final $body = body;
     final Request $request = Request(
       'POST',
       $url,
       client.baseUrl,
+      body: $body,
     );
-    return client.send<bool, bool>($request);
+    return client.send<dynamic, dynamic>($request);
   }
 
   @override
-  Future<Response<bool>> updateNote(
-    String noteID,
-    NoteManipulation item,
-  ) {
-    final Uri $url = Uri.parse('{noteID}');
+  Future<Response<dynamic>> updateNote({
+    required String noteID,
+    required Map<String, dynamic> body,
+  }) {
+    final Uri $url = Uri.parse('${noteID}');
+    final $body = body;
     final Request $request = Request(
       'PUT',
       $url,
       client.baseUrl,
+      body: $body,
     );
-    return client.send<bool, bool>($request);
+    return client.send<dynamic, dynamic>($request);
   }
 
   @override
-  Future<Response<bool>> deleteNote(String noteID) {
-    final Uri $url = Uri.parse('{noteID}');
+  Future<Response<dynamic>> deleteNote({required String noteID}) {
+    final Uri $url = Uri.parse('${noteID}');
     final Request $request = Request(
       'DELETE',
       $url,
       client.baseUrl,
     );
-    return client.send<bool, bool>($request);
+    return client.send<dynamic, dynamic>($request);
   }
 }
